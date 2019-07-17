@@ -1,6 +1,10 @@
 import autograd.numpy as np
 
+<<<<<<< HEAD
 def atomsDistances(positions, cell, cutoff_radius = 6.0, self_interaction = False):
+=======
+def AtomsDistances(positions, cell cutoff_radius = 6.0):
+>>>>>>> a01b20c87560362bfeea9c667657d2ffd8bbbf0e
     """ Compute the distance of every atom to its neighbors.
 
     This function utilizes the pytorch to compute the differentiable distances tensor,
@@ -11,6 +15,7 @@ def atomsDistances(positions, cell, cutoff_radius = 6.0, self_interaction = Fals
     Parameters:
     -----------
     positions: np.ndarray
+<<<<<<< HEAD
         Atomic positions. The size of this tensor will be (N_atoms, 3), where N_atoms is the number of atoms
         in the cluster.
     cell: np.ndarray
@@ -29,6 +34,18 @@ def atomsDistances(positions, cell, cutoff_radius = 6.0, self_interaction = Fals
         second_atoms will be computed and stored in the distances array.
     cell_shift_vector: np.ndarray
         The cell shift vector of every atom.
+=======
+    Atomic positions. The size of this tensor will be (N_atoms, 3), where N_atoms is the number of atoms
+    in the cluster.
+    cell: np.ndarray
+    Periodic cell, which has the size of (3, 3)
+    cutoff_radius: float
+    Cutoff Radius, which is a hyper parameters. The default is 6.0 Angstrom.
+    Return:
+    ----------
+    distances: np.ndarray
+    Differentialble distances array.
+>>>>>>> a01b20c87560362bfeea9c667657d2ffd8bbbf0e
     """
     # Compute reciprocal lattice vectors.
     inverse_cell = np.linalg.pinv(cell).T
@@ -36,7 +53,11 @@ def atomsDistances(positions, cell, cutoff_radius = 6.0, self_interaction = Fals
     # Compute distances of cell faces.
     face_dist_c = 1 / np.linalg.norm(inverse_cell, axis = 0)
 
+<<<<<<< HEAD
     # Compute number of bins, the minimum bin size must be [1., 1., 1.].
+=======
+    # Compute number of bins
+>>>>>>> a01b20c87560362bfeea9c667657d2ffd8bbbf0e
     nbins_c = np.maximum((face_dist_c / cutoff_radius - (face_dist_c / cutoff_radius) % 1), [1., 1., 1.])
     nbins = np.prod(nbins_c)
 
@@ -69,6 +90,13 @@ def atomsDistances(positions, cell, cutoff_radius = 6.0, self_interaction = Fals
         atom_i = atom_i[mask]
         bin_index_i = bin_index_i[mask]
 
+<<<<<<< HEAD
+=======
+    # Make sure that all atoms have been sorted into bins.
+    assert len(atom_i) == 0
+    assert len(bin_index_i) == 0
+
+>>>>>>> a01b20c87560362bfeea9c667657d2ffd8bbbf0e
     # Create the shift list that indicates that where the cell might shift.
     shift = []
     for neighbor_search_x in range(-1, 2):
@@ -82,6 +110,7 @@ def atomsDistances(positions, cell, cutoff_radius = 6.0, self_interaction = Fals
     neighborbin = neighborbin[:, :, 0] + nbins_c[0] * (neighborbin[:, :, 1] + nbins_c[1] * neighborbin[:, :, 2])
 
     distances = []
+<<<<<<< HEAD
     first_atoms = []
     second_atoms = []
     cell_shift_vector = []
@@ -96,10 +125,20 @@ def atomsDistances(positions, cell, cutoff_radius = 6.0, self_interaction = Fals
         distances_vec = distances_vec + np.dot(cell_shift[i], cell)[:, None]
         # make the cell shift vector for every atom instead of every bin.
         _cell_shift_vector = np.repeat(cell_shift[i][:, None], max_natoms_per_bin, axis = 1)[mask]
+=======
+    for i in range(len(positions)):
+        # Create a mask that indicates which neighborhood bin contains atoms.
+        mask = np.logical_and(atoms_in_bin_ba[np.int_(neighborbin[i])] != -1, atoms_in_bin_ba[np.int_(neighborbin[i])] != i)
+
+        distances_vec = positions[atoms_in_bin_ba[np.int_(neighborbin[i])]] - positions[i]
+        # the distance should consider the cell shift
+        distances_vec = distances_vec + np.dot(cell_shift[i], cell)[:, None]
+>>>>>>> a01b20c87560362bfeea9c667657d2ffd8bbbf0e
         distances_vec = distances_vec[mask]
         temp_distances = np.sum(distances_vec*distances_vec, axis = 1)
         temp_distances = (temp_distances)**0.5
         cutoff_mask = (temp_distances < cutoff_radius)
+<<<<<<< HEAD
         _second_atoms = atoms_in_bin_ba[np.int_(neighborbin[i])][mask][cutoff_mask]
         _first_atoms = [i] * len(_second_atoms)
         _cell_shift_vector = _cell_shift_vector[cutoff_mask]
@@ -114,3 +153,9 @@ def atomsDistances(positions, cell, cutoff_radius = 6.0, self_interaction = Fals
     second_atoms = np.array(second_atoms)
     
     return distances, first_atoms, second_atoms, cell_shift_vector
+=======
+        distances.extend(temp_distances[cutoff_mask])
+
+    distances = np.array(distances)
+    return distances
+>>>>>>> a01b20c87560362bfeea9c667657d2ffd8bbbf0e
