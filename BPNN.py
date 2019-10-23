@@ -5,7 +5,7 @@ from nn import *
 from Gaussian import *
 
 class BPNN:
-    def __init__(self, db, params, n_radial = 2, n_angular = 1, mode = 'Behler'):
+    def __init__(self, db, params, n_radial = 2, n_angular = 1):
         self.db = db
         self.E, self.F, self.atoms_set, self.numbers, self.num_atoms = self.data()
         self.elements = np.array(params['elements'])
@@ -14,7 +14,7 @@ class BPNN:
         self.NN = []
         self.sizes = params['sizes']
         # insert the input layer
-        self.sizes.insert(0, n_radial * len(self.elements) + n_angular)
+        self.sizes.insert(0, n_radial * len(self.elements) + n_angular * np.sum(np.arange(len(self.elements) + 1)))
         # insert the output layer
         self.sizes.append(1)
         for i in range(len(self.elements)):
@@ -68,13 +68,6 @@ class BPNN:
 
         return np.array(fps), np.array(dfpdX)
 
-    # def dG2dR(self, positions, cell, fp_params):
-    #     dGdR = elementwise_grad(G2, argnum = 0)
-    #     return dGdR(positions, cell, fp_params)
-
-    # def dG4dR(self, positions, cell, fp_params):
-    #     dGdR = elementwise_grad(G4, argnum = 0)
-    #     return dGdR(positions, cell, fp_params)
 
     def dG2dR(self, positions, cell, numbers, elements, fp_params):
         dGdR = jacobian(G2, argnum = 0)
@@ -115,35 +108,13 @@ class BPNN:
         for i in range(len(F_predict)):
             dfpidX = self.dfpdX[i]
             shape = dfpidX.shape
-            # F_predict[i] = -np.dot(dEdfp[i].reshape(1, -1), dfpidX.T.reshape((shape[-1] * shape[-2], -1))).reshape((d2, d3))
             d0, d1, d2, d3 = dfpidX.shape
             F_predict[i] = -np.dot(dEdfp[i].reshape(1, -1), dfpidX.reshape((d0 * d1, d2 * d3))).reshape((d2, d3))
 
 
         return E_predict, F_predict
 
-    # def predict_value(self, weights):
-    #     E_predict = []
-    #     dEdfp = []
-    #     F_predict = np.zeros(np.array(self.F).shape)
-    #     for idx, element in enumerate(self.elements):
-    #         mask = list(map(lambda x: x == element, self.numbers)) * np.ones(self.numbers.shape)
-    #         nn = self.NN[idx]
-    #         weight = weights[idx * len(nn.weights): (idx + 1) * len(nn.weights)] 
-    #         nn.weights = weight
-    #         for j in range(len(self.atoms_set)):
-    #             fps = self.fps[j] * mask[j][:, None]
-                
-    #             E_predict.append(np.sum(nn.feedforward(weight, fps, mask[j][:, None])))
-    #             # dEdfp.append(nn.dEdfp(weight, mask[j][:, None])) 
-        
-    #     E_predict = np.array(E_predict)
-    #     d0 = len(E_predict)
-    #     E_predict = E_predict.reshape(len(self.elements), d0 // len(self.elements))
-    #     E_predict = np.sum(E_predict, axis = 0)
 
-
-    #     return E_predict
 
     def error(self, weights):
         E_predict, F_predict = self.predict_value(weights)
