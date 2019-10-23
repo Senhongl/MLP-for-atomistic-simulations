@@ -1,17 +1,21 @@
 import time
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
-from newBPNN import *
+from SPNN import *
+from BPNN import *
 import os
 
 class representation:
-    def __init__(self, db, params, n_radial, n_angular, fileName, max_iteration = 600):
+    def __init__(self, db, params, n_radial, n_angular, fileName, max_iteration = 600, model = 'SPNN'):
         self.fileName = fileName
         if not os.path.exists(fileName):
             os.makedirs(fileName)
         logfile = open(f'./{fileName}/{fileName}.txt', 'w+')
         t0 = time.time()
-        self.bpnn = BPNN(db, params, n_radial, n_angular)
+        if model == 'SPNN':
+            self.bpnn = SPNN(db, params, n_radial, n_angular)
+        elif model == 'BPNN':
+            self.bpnn = BPNN(db, params, n_radial, n_angular)
         logfile.write(f'It takes {time.time()-t0}s to generate the fingerprints.\n')
         logfile.write('|Epoch|  Energy MSE   |  Forces MSE   |   total loss  |   Time (s)    |\n')
         logfile.close()
