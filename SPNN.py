@@ -4,7 +4,7 @@ from autograd import elementwise_grad
 from nn import *
 from Gaussian import *
 
-class BPNN:
+class SPNN:
     def __init__(self, db, params, n_radial = 2, n_angular = 1, mode = 'Behler', training_force = True):
         self.db = db
         self.E, self.F, self.atoms_set, self.numbers, self.num_atoms = self.data()
