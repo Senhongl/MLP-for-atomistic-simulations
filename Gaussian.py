@@ -1,3 +1,9 @@
+"""
+This file conduct the fingerprints functions of ACSFs. All of them are derived from the paper 
+"Constructing High-Dimensional Neural Network Potentials: A Tutorial Review" 
+(https://onlinelibrary.wiley.com/doi/full/10.1002/qua.24890).
+"""
+
 from atomsDistances import *
 import autograd.numpy as np
 from atomsAngle import *
@@ -27,21 +33,6 @@ def G2(positions, cell, numbers, elements, params):
     g2 = np.dot(g2, species_mask)
 
     return g2
-
-# def G4(positions, cell, params):
-#     cutoff_radius = params['cutoff_radius']
-#     eta = params['eta']
-#     zeta = params['zeta']
-#     lbda = params['lbda']
-#     cos, Rij, Rik, ij = newAtomsAngle(positions, cell, cutoff_radius)
-#     g4 = []
-#     for i in range(len(positions)):
-#         mask = (ij == i)
-#         g4_i = (1 + lbda * cos[mask])**zeta * np.exp(-eta * (Rij[mask]**2 + Rik[mask]**2)) 
-#         g4_i = g4_i * cutoff(cutoff_radius, Rij[mask]) * cutoff(cutoff_radius, Rik[mask])
-#         g4_i = 2**(1 - zeta) * np.sum(g4_i)
-#         g4.append(g4_i)
-#     return np.array(g4)
 
 def G4(positions, cell, numbers, elements, params):
     cutoff_radius = params['cutoff_radius']
