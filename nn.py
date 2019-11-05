@@ -1,5 +1,9 @@
 import autograd.numpy as np
 
+"""
+Construct the basic neuralnetwork for BPNN and SPNN, anyone of them would conduct this file as a basic block.
+"""
+
 
 class Activation(object):
 
@@ -23,7 +27,7 @@ class Activation(object):
 class Tanh(Activation):
 
     """
-    Sigmoid non-linearity
+    Tanh non-linearity
     """
 
     def __init__(self):
@@ -38,7 +42,7 @@ class Tanh(Activation):
     
 
 class neuralnetwork:
-    def __init__(self, sizes, act = 'sigmoid', seeds = None):
+    def __init__(self, sizes, act = 'tanh', seeds = None):
         self.act = act
         self.sizes = sizes
         self.weights = self.initialization(self.sizes, seeds)
@@ -53,16 +57,20 @@ class neuralnetwork:
             The shape will be the layer size of the neural network and the value will be
             the hidden units of the corresponding layer.
 
-            >>> layer_size = array([1, 2, 3, 1])
+            >>> layer_size = array([3, 2, 3, 1])
 
             whihc means that there are 2 hidden layers and the hidden units will be 2 and
-            3, respectively. The input and output will always be 1, which is the fingerprint 
-            of an atom and atomic energy, respectively.
+            3, respectively. The inputs size should be different when the number of 
+            fingerprints and the type of fingeprints are different. In the BPNN, the outputs 
+            should always be 1, which means the atomic energy of a element. In the SPNN, 
+            the outputs would be different when the number of elements in the configuration
+            is different.
+            
         Returns:
         ------------
-        A weights matrix and a biases matrix
+        A weights matrix, which contains biases.
         """
-        rs = np.random.RandomState(seed=seed)
+        rs = np.random.RandomState(seed = seed)
         weights = []
         for i in range(len(sizes) - 1):
             weights += list(rs.randn((sizes[i] + 1) * sizes[i + 1]))
@@ -71,6 +79,24 @@ class neuralnetwork:
 
     
     def feedforward(self, weights, inputs, mask):
+        """
+        Do the feedforward for the network.
+        Parameters:
+        -----------
+        weights: np.ndarray
+            The weights matrix should be an attribute of the neuralnetwork. However, in order 
+            to do the autograd, it has to be an argument of the function.
+        inputs: np.ndarray
+            The inputs of the neuralnetwork would be the value of fingerprints. The shape of 
+            it depends of the number of fingerprints and the type of fingerprints. 
+        mask: np.ndarray
+            The mask is used for the final outputs. For single element system, the mask will 
+            just be one.
+        
+        Returns:
+        ------------
+        atomic energy
+        """
         w_index = 0
         x = np.array(inputs)
         for i in range(len(self.sizes) - 1):
@@ -88,10 +114,26 @@ class neuralnetwork:
                 x = activation((x @ weight) + bias) 
             else:
                 x = x @ weight + bias
+                
         x *= mask
         return x
 
     def dEdfp(self, weights, mask):
+        """
+        Do the backpropgation for the network.
+        Parameters:
+        -----------
+        weights: np.ndarray
+            The weights matrix should be an attribute of the neuralnetwork. 
+        mask: np.ndarray
+            The mask is used for the final outputs. For single element system, the mask will 
+            just be one.
+        
+        Returns:
+        ------------
+        the derivative of atomic energy w.r.t. fingerprints
+        """
+        
         w_index = len(weights) - (self.sizes[-2] + 1) * self.sizes[-1]
         derivative = weights[w_index : -self.sizes[-1]].reshape(self.sizes[-2], self.sizes[-1]).T
         derivative = mask @ derivative
