@@ -31,8 +31,8 @@ class representation:
         
     def callbackF(self, weights):
         logfile = open(f'./{self.fileName}/{self.fileName}.txt', 'a')
-        E_MSE, F_MSE = self.bpnn.error(weights)
-        loss = self.bpnn.objective(weights)
+        E_MSE, F_MSE = self.nn.error(weights)
+        loss = self.nn.objective(weights)
         logfile.write('|{:5}|{:15.5f}|{:15.5f}|{:15.5f}|{:15.1f}| \n'.format(
             self.Nfeval, E_MSE, F_MSE, loss, time.time() - self.t0))
         logfile.close()
@@ -49,7 +49,7 @@ class representation:
             init_weights = self.nn.NN.weights
             
         self.t0 = time.time()
-        self.res = minimize(self.bpnn.objective, init_weights, callback = self.callbackF, options = {'maxiter': self.max_iteration})
+        self.res = minimize(self.nn.objective, init_weights, callback = self.callbackF, options = {'maxiter': self.max_iteration})
 
     def visualization(self):
         

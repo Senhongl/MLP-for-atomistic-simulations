@@ -63,13 +63,13 @@ class BPNN:
         numbers = []
         
         for d in self.db.select():
-            E.append(d.energy)
-            F.append(d.forces)
-            atoms.append(d.toatoms())
+            E_labels.append(d.energy)
+            F_labels.append(d.forces)
+            atoms_set.append(d.toatoms())
             numbers.append(d.toatoms().numbers)
             
-        num_atoms = len(atoms[0].positions)
-        return np.array(E), np.array(F), atoms_set, np.array(numbers), num_atoms
+        num_atoms = len(atoms_set[0].positions)
+        return np.array(E_labels), np.array(F_labels), atoms_set, np.array(numbers), num_atoms
 
     def generate_fps(self):
         """
@@ -136,14 +136,15 @@ class BPNN:
         dEdfp = []
         F_predict = np.zeros(np.array(self.F).shape)
         
-        # create a mask for different elements
-        mask = []
-        for element in self.elements:
-            mask.append((list(map(lambda x: x == element, self.numbers)) * np.ones(self.numbers.shape)).T)
-        mask = np.array(mask).T
+        # # create a mask for different elements
+        # mask = []
+        # for element in self.elements:
+        #     mask.append((list(map(lambda x: x == element, self.numbers)) * np.ones(self.numbers.shape)).T)
+        # mask = np.array(mask).T
         
         # loop over every single element to get the total energy and force
         for idx, element in enumerate(self.elements):
+            mask = list(map(lambda x: x == element, self.numbers)) * np.ones(self.numbers.shape)
             nn = self.NN[idx]
             weight = weights[idx * len(nn.weights): (idx + 1) * len(nn.weights)] 
             nn.weights = weight
