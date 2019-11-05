@@ -12,10 +12,14 @@ class representation:
             os.makedirs(fileName)
         logfile = open(f'./{fileName}/{fileName}.txt', 'w+')
         t0 = time.time()
+        
+        self.model = model
+        # initialize the model
         if model == 'SPNN':
-            self.bpnn = SPNN(db, params, n_radial, n_angular)
+            self.nn = SPNN(db, params, n_radial, n_angular)
         elif model == 'BPNN':
-            self.bpnn = BPNN(db, params, n_radial, n_angular)
+            self.nn = BPNN(db, params, n_radial, n_angular)
+         
         logfile.write(f'It takes {time.time()-t0}s to generate the fingerprints.\n')
         logfile.write('|Epoch|  Energy MSE   |  Forces MSE   |   total loss  |   Time (s)    |\n')
         logfile.close()
@@ -35,21 +39,31 @@ class representation:
         self.Nfeval += 1
         
     def __call__(self):
-        # weights = []
-        # for nn in self.bpnn.NN:
-        #     weights.extend(nn.weights)
-        # weights = np.array(weights)
-        self.t0 = time.time()
-        self.res = minimize(self.bpnn.objective, self.bpnn.NN.weights, callback = self.callbackF, options = {'maxiter': self.max_iteration})
         
-    def visualization(self):
-        # weights = []
-        # for nn in self.bpnn.NN:
-        #     weights.extend(nn.weights)
-        # weights = np.array(weights)
-        E_predict, F_predict = self.bpnn.predict_value(self.bpnn.NN.weights)
+        if self.model == 'BPNN':
+            init_weights = []
+            for nn in self.nn.NN:
+                init_weights.extend(nn.weights)
+            init_weights = np.array(init_weights)
+        else:
+            init_weights = self.nn.NN.weights
+            
+        self.t0 = time.time()
+        self.res = minimize(self.bpnn.objective, init_weights, callback = self.callbackF, options = {'maxiter': self.max_iteration})
 
-        E_label = self.bpnn.E
+    def visualization(self):
+        
+        if self.model == 'BPNN':
+            weights = []
+            for nn in self.nn.NN:
+                weights.extend(nn.weights)
+            weights = np.array(weights)
+        else:
+            weights = self.nn.NN.weights
+            
+        E_predict, F_predict = self.nn.predict_value(weights)
+
+        E_label = self.nn.E
         E_NN = E_predict
         plt.scatter(E_label,E_NN)
         plt.plot(E_NN,E_NN)
@@ -59,7 +73,7 @@ class representation:
         plt.show()
         
         F_NN = [f for Force in F_predict for F in Force for f in F]
-        F_label = [f for Force in self.bpnn.F for F in Force for f in F]
+        F_label = [f for Force in self.nn.F for F in Force for f in F]
 
         plt.clf()
         plt.scatter(F_label,F_NN)
