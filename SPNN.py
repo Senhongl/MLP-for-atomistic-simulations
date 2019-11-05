@@ -1,51 +1,83 @@
 import autograd.numpy as np
 from autograd import jacobian
-from autograd import elementwise_grad
 from nn import *
 from Gaussian import *
 
+"""
+This file conduct the shared-parameters neural network (SPNN), which means that no matter how many elements in the 
+configuration, all of them would share the same parameters to compute the atomic energy. The neural network is 
+currently only support the G2 and G4 function as fingerprints.
+"""
+
+
 class SPNN:
-    def __init__(self, db, params, n_radial = 2, n_angular = 1, mode = 'Behler', training_force = True):
+    def __init__(self, db, params, n_radial = 2, n_angular = 1):
         self.db = db
         self.E, self.F, self.atoms_set, self.numbers, self.num_atoms = self.data()
         self.elements = np.array(params['elements'])
-        self.training_force = training_force
-        
-        
+
         self.sizes = params['sizes']
-        # insert the input layer
-        self.sizes.insert(0, n_radial * len(self.elements) + n_angular * np.sum(np.arange(len(self.elements) + 1)))
-        # insert the output layer
-        self.sizes.append(len(self.elements))
-        # generate NNs for every element
-        self.NN = neuralnetwork(self.sizes)
-        # for i in range(len(self.elements)):
-        #     self.NN.append(neuralnetwork(self.sizes))
         
-        # generate fingerprints
+        # insert the input layer, since for radial symmetry function, the number of pair terms would
+        # be equal to the number of elements in the configuration. For example, for Au-Pd system, the pair
+        # terms would be Au-Au and Au-Pd when the center atom is Au. 
+        # For angular symmetry function, the number of triplet terms would be a permulation problem.
+        self.sizes.insert(0, n_radial * len(self.elements) + n_angular * np.sum(np.arange(len(self.elements) + 1)))
+        
+        
+        # insert the output layer, for SPNN, the number of output units would be equal to the number of elements
+        self.sizes.append(len(self.elements))
+        
+        
+        # initialize a neuralnetwork
+        self.NN = neuralnetwork(self.sizes)
+        
+        # generate fingerprints and the derivative of fingerprints w.r.t. atomic position
         self.fp_params = params['fp_params']
-        self.mode = mode
         self.n_radial = n_radial 
         self.n_angular = n_angular
         self.fps, self.dfpdX = self.generate_fps()
-
+        
+        
         self.E_coeff = params['E_coeff']
         self.F_coeff = params['F_coeff']
 
     def data(self):
-        E = []
-        F = []
-        atoms = []
+        """
+        Extract data from database
+        -----------
+        Returns:
+        ------------
+        E, F: np.ndarray
+            The value of energy and forces for the configuration. 
+        atoms_set: list
+            A list of configurations in the database.
+        numbers: np.ndarray
+            A matrix that contains the atomic number in all of the configurations.
+        num_atoms: int
+            A scalar value that is the number of atoms in the configurations.
+        """
+        
+        E_labels = []
+        F_labels = []
+        atoms_set = []
         numbers = []
+        
         for d in self.db.select():
             E.append(d.energy)
             F.append(d.forces)
             atoms.append(d.toatoms())
             numbers.append(d.toatoms().numbers)
+            
         num_atoms = len(atoms[0].positions)
-        return np.array(E), np.array(F), atoms, np.array(numbers), num_atoms
+        return np.array(E), np.array(F), atoms_set, np.array(numbers), num_atoms
 
     def generate_fps(self):
+        """
+        Generate not only the fingerprints of all the configuration, but also the derivative of 
+        fingerprints w.r.t. atoms position. The process of derivation is conducted by the autograd.
+        """
+        
         fps = []
         dfpdX = []
         for atoms in self.atoms_set:
@@ -85,24 +117,38 @@ class SPNN:
 
 
     def predict_value(self, weights):
+        """
+        Computing the energy and forces of the configurations.
+        Parameters:
+        -----------
+        weights: np.ndarray
+            The weights matrix should be an attribute of the neuralnetwork. In the following part,
+            the netwrok would be trained by Scipy.optimize.minimize to optimize the weights.
+            
+        Returns:
+        ------------
+        Predict value of energy and forces.
+        """
+        
         E_predict = []
         F_predict = np.zeros(np.array(self.F).shape)
 
+        # create a mask for different elements
         mask = []
         for element in self.elements:
             mask.append((list(map(lambda x: x == element, self.numbers)) * np.ones(self.numbers.shape)).T)
-
         mask = np.array(mask).T
-        self.NN.weights = weights
+        
         for i in range(len(self.atoms_set)):
             fps = self.fps[i]
             outputs = self.NN.feedforward(weights, fps, mask[i])
-            # dEdfp = elementwise_grad(self.NN.feedforward, argnum = 1)(weights, fps, mask[i])
             dEdfp = self.NN.dEdfp(weights, mask[i])
             E_predict.append(np.sum(outputs))
 
             dfpidX = self.dfpdX[i]
             d0, d1, d2, d3 = dfpidX.shape
+            
+            # compute forces
             F_predict[i] -= np.dot(dEdfp.reshape(1, -1), dfpidX.reshape((d0 * d1, d2 * d3))).reshape((d2, d3))
         
         E_predict = np.array(E_predict)
