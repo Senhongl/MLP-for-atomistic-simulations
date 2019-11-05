@@ -1,13 +1,15 @@
-import autograd.numpy as np
-from autograd import jacobian
-from nn import *
-from Gaussian import *
 
 """
 This file conduct the shared-parameters neural network (SPNN), which means that no matter how many elements in the 
 configuration, all of them would share the same parameters to compute the atomic energy. The neural network is 
 currently only support the G2 and G4 function as fingerprints.
 """
+
+
+import autograd.numpy as np
+from autograd import jacobian
+from nn import *
+from Gaussian import *
 
 
 class SPNN:
