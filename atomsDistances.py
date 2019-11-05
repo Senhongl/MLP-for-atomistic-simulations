@@ -3,8 +3,8 @@ import autograd.numpy as np
 def atomsDistances(positions, cell, cutoff_radius = 6.0, self_interaction = False):
     """ Compute the distance of every atom to its neighbors.
 
-    This function utilizes the pytorch to compute the differentiable distances tensor,
-    which represents the distances of every central atom to its neighbors. If the
+    
+    This function computes the distances of every central atom to its neighbors. If the
     distances is larger than the cutoff radius, then the distances will be handled as 0.
     Here, periodic boundary condition is assuming true for every axis.
 
