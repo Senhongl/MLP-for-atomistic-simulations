@@ -1,6 +1,5 @@
 # MLP-for-atomistic-simulations
 
-- Differentiable atomistic potentials is a software package written in the Python programming language designed to predict potential energy and other properties of molecules and materials such as forces and stress. 
-The atomistic potential computes the potential energy using atomic information such as the atomic coordinates, numbers and unit cell. The forces and stress are computed from derivatives of the atomistic energy function. 
+## Summary
 
 - In this project, we use an automatic differentiation package, i.e., autograd, to derive forces and stresses of an atomistic configuration based on its potential energy program. It contains basic differentiable building blocks of computing atoms distances and angles. In the fundamental of the ASE framework, the distances function can achieve O(n) time complexity, which allows to efficiently apply the atomistic potential function. This allows for easy implementation and evaluation of new models. For now, this project includes implementations of the Lennard-Jones potential, which is fully scripted in Python to compute energies, forces, and stress of periodic atomic systems containing one kind of chemical element. In the future, the Lennard-Jones potential model will combine with a machine learning model, e.g., a neural network or linear regression, to fit quantum chemical data. At the same time, the extrapolation will be reasonable to some extent due to the combination with Lennard-Jones potentials.
